@@ -1,0 +1,34 @@
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    timeout-minutes: 40
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nim: ["stable", "devel"]
+        gc: ["refc", "orc"]
+      fail-fast: false
+      max-parallel: 1
+
+    name: Nim ${{ matrix.nim }} ${{ matrix.gc }}
+    steps:
+      - name: Cache choosenim
+        id: cache-choosenim
+        uses: actions/cache@v1
+        with:
+          path: ~/.nimble
+          key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ hashFiles('pink.nimble') }}
+
+      - name: Setup Nim Enviroment
+        uses: actions/checkout@master
+      - uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: ${{ matrix.nim }}
+      - name: Update nimble
+        run: nimble update
+
+      - name: Try building
+        run: nimble --deepcopy:on --gc:${{ matrix.gc }} build
